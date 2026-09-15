@@ -125,7 +125,7 @@ Move on when you pass the exit test. Roughly a phase a day; Phase 6 and 10 deser
 Rules hold throughout: you type every line; reference code only after attempting; the
 verify command *is* the learning — never skip it.
 
-### Phase 0 — Source build (background)
+### Background task — source build (not a phase; runs in parallel)
 Kick off §4A immediately, then forget it until Phase 6. Costs nothing while it compiles.
 
 ### Phase 0 — Derive (before everything else, ~2-3h, pen and paper)
@@ -206,7 +206,7 @@ Take the top 5 passes your tool flags and learn what each actually does from sou
 InstCombine, SimplifyCFG, Inliner.
 *Exit:* per pass, one paragraph — invariant established, cost, triggering IR pattern.
 
-**Done = Phases 1-8 + 10.** Phase 0 runs in the background, Phase 9 if hungry. The only
+**Done = Phases 1-8 + 10.** The background build runs in parallel; Phase 9 if hungry. The only
 thing still out of scope is a GUI — chrome, not learning.
 
 ---
