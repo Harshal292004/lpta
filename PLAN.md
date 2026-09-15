@@ -52,9 +52,10 @@ Who bleeds: compiler devs ("did my new pass do what I intended?"), performance e
 ## 3. Architecture
 
 > ⛔ SEALED until you pass Phase 0's exit test. This is *one* design, not *the* design.
-> Reading it first will anchor every decision you make afterward. `src/` is sealed too:
-> the binary is a black box you may run, never source you may read — until the phase
-> that builds that piece.
+> Reading it first will anchor every decision you make afterward. The reference source is
+> physically gone from this tree (sealed in git history, commit `43ecc4a` — restore only
+> after unsealing, with `git checkout 43ecc4a -- src CMakeLists.txt`). Until then the
+> compiled `./build/lpta` binary is a black box you may run, never source you may read.
 
 ```
 input.c ──► clang (emit IR) ──► LPTA
