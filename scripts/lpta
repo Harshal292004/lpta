@@ -1,0 +1,114 @@
+#!/usr/bin/env bash
+# lpta: friendly wrapper around the LPTA pass plugin.
+#
+#   lpta --html=report.html -- clang++ -O2 foo.cpp -c
+#   lpta --report=functions --function=compute -- clang++ -O2 foo.cpp -c
+#   lpta --json=trace.json -- opt -passes='default<O2>' foo.ll -disable-output
+#
+# The plugin is located with LPTA_PLUGIN, or next to this script in ../build,
+# ../lib, or the current directory.
+
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: lpta [LPTA options] -- <compiler command...>
+
+LPTA options:
+  --report=VIEW       summary (default), passes, functions, full, off
+  --top=N             rows in ranked tables (0 = all)
+  --function=REGEX    limit views to matching functions
+  --pass=REGEX        limit views to matching passes
+  --min-score=X       hide events below this score
+  --diff              show IR diffs for changed invocations
+  --color=MODE        auto, always, never
+  --out=FILE          write the terminal report to FILE
+  --html=FILE         write a self-contained HTML report
+  --json=FILE         write a versioned JSON trace
+  --compare=FILE      compare against a saved trace
+  --weights=FILE      custom significance weights
+  --demangle=MODE     auto or off
+  --pipeline=LABEL    override the detected pipeline label
+  --skipped           record skipped passes
+  --help              show this help
+
+The compiler command is run with -fpass-plugin (or -load-pass-plugin for opt,
+or -Z llvm-plugins for rustc) and LPTA_OPTIONS set to the selected options.
+EOF
+}
+
+opts=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --report=*|--top=*|--function=*|--pass=*|--min-score=*|--color=*|\
+    --out=*|--html=*|--json=*|--compare=*|--weights=*|--demangle=*|--pipeline=*)
+      opts+=("-lpta-${1#--}")
+      shift
+      ;;
+    --diff)
+      opts+=("-lpta-diff")
+      shift
+      ;;
+    --skipped)
+      opts+=("-lpta-skipped")
+      shift
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -*)
+      echo "lpta: unknown option '$1' (use --help)" >&2
+      exit 2
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+if [[ $# -eq 0 ]]; then
+  usage >&2
+  exit 2
+fi
+
+plugin="${LPTA_PLUGIN:-}"
+if [[ -z "$plugin" ]]; then
+  here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  for candidate in "$here/../build/LPTA.so" "$here/../lib/LPTA.so" \
+                   "$here/LPTA.so" "$PWD/LPTA.so"; do
+    if [[ -f "$candidate" ]]; then
+      plugin="$candidate"
+      break
+    fi
+  done
+fi
+if [[ -z "$plugin" || ! -f "$plugin" ]]; then
+  echo "lpta: cannot find LPTA.so; set LPTA_PLUGIN=/path/to/LPTA.so" >&2
+  exit 2
+fi
+
+joined=""
+if [[ ${#opts[@]} -gt 0 ]]; then
+  printf -v joined '%q ' "${opts[@]}"
+fi
+export LPTA_OPTIONS="${joined% }"
+
+cmd="$1"
+shift
+base="$(basename "$cmd")"
+case "$base" in
+  opt|opt-*)
+    exec "$cmd" -load-pass-plugin="$plugin" "$@"
+    ;;
+  rustc)
+    exec "$cmd" -Z "llvm-plugins=$plugin" "$@"
+    ;;
+  *)
+    exec "$cmd" -fpass-plugin="$plugin" "$@"
+    ;;
+esac

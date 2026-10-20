@@ -1,0 +1,8 @@
+#ifndef LPTA_VERSION_H
+#define LPTA_VERSION_H
+
+#define LPTA_VERSION_STRING "0.1.0"
+#define LPTA_TRACE_SCHEMA_VERSION "1.0"
+#define LPTA_TRACE_SCHEMA_MAJOR 1
+
+#endif
